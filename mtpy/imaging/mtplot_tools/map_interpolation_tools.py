@@ -216,6 +216,8 @@ def triangulate_interpolation(
 
     tree = cKDTree(np.array([x, y]).T)
 
+    nearest_neighbors = min(nearest_neighbors, len(values))
+
     xy = np.array([grid_x, grid_y]).T
     d, l = tree.query(xy, k=nearest_neighbors)
 
