@@ -13,6 +13,12 @@ import numpy as np
 
 from mtpy.imaging.mtplot_tools import PlotBaseMaps
 
+try:
+    import contextily as cx
+    has_cx = True
+except ModuleNotFoundError:
+    has_cx = False
+
 # =============================================================================
 
 
@@ -33,8 +39,11 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         self.plot_tm = True
         self.plot_stations = True
         self.depth_cmap = "magma"
+        self.depth_alpha = 1.0
         self.marker_color = "k"
         self.marker_size = 10
+        self.marker_linewidth = "w"
+        self.marker_edgecolor = 0.5
         self.subplot_title_dict = {
             "det": "Determinant",
             "xy": "TE Mode",
@@ -46,6 +55,11 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         self.subplot_wspace = 0.2
         self.subplot_hspace = 0.1
         self.font_size = 8
+
+        self.plot_cx = False
+        self.cx_source = None
+        self.cx_limits = None
+        self.cx_zoom = "auto"
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -221,6 +235,36 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         plot_components = self._get_plot_component_dict()
 
         for comp, ax in plot_components.items():
+
+            # Plot background image if specified
+            if self.image_file is not None:
+                im = plt.imread(self.image_file)
+                self.ax.imshow(
+                    im, origin="lower", extent=self.image_extent, aspect="auto"
+                )
+            # plot stations (just to obtain gax for base map)
+            gdf = self.mt_data.to_geo_df(model_locations=False)
+            gax = gdf.plot(
+                ax=ax,
+                marker=self.marker,
+                color=self.marker_color,
+                markersize=0,
+            )
+            # Plot base map if specified
+            if has_cx and self.plot_cx:
+                cx_kwargs = {
+                    "crs": gdf.crs.to_string(),
+                    "source": self.cx_source,
+                    "zoom": self.cx_zoom
+                }
+                if self.cx_limits is not None:
+                    ax.set_xlim(self.cx_limits[0], self.cx_limits[1])
+                    ax.set_ylim(self.cx_limits[2], self.cx_limits[3])
+                cx.add_basemap(
+                    gax,
+                    **cx_kwargs,
+                )
+
             plot_depth_array = self._filter_depth_array(depth_array, comp)
             if self.interpolation_method in ["nearest", "linear", "cubic"]:
                 plot_x, plot_y, image = self.interpolate_to_map(
@@ -234,6 +278,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                     cmap=self.depth_cmap,
                     vmin=self.depth_range[0],
                     vmax=self.depth_range[1],
+                    alpha=self.depth_alpha,
                 )
             elif self.interpolation_method in [
                 "fancy",
@@ -256,6 +301,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                         levels=levels,
                         extend="both",
                         cmap=self.depth_cmap,
+                        alpha=self.depth_alpha,
                     )
                 else:
                     im = ax.tricontourf(
@@ -265,6 +311,7 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                         # mask=indices,
                         extend="both",
                         cmap=self.depth_cmap,
+                        alpha=self.depth_alpha,
                     )
 
             plt.colorbar(
@@ -283,6 +330,8 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                     marker=self.marker,
                     s=self.marker_size,
                     c=self.marker_color,
+                    edgecolors=self.marker_edgecolor,
+                    linewidths=self.marker_linewidth,
                 )
 
             ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
