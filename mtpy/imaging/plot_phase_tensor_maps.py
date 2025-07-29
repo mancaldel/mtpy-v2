@@ -94,7 +94,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
         if has_cx:
             self.cx_source = cx.providers.USGS.USTopo
         # station labels
-        self.station_id = (0, 2)
+        self.station_id = (0, None)
         self.station_pad = 0.0005
 
         self.arrow_legend_fontdict = {"size": self.font_size, "weight": "bold"}
@@ -749,7 +749,7 @@ class PlotPhaseTensorMaps(PlotBaseMaps):
             self.plot_yarr[index] = plot_y
 
             # ------------Plot station name------------------------------
-            if self.plot_station:
+            if self.plot_station and plot_x*plot_y!=0:
                 self.ax.text(
                     plot_x,
                     plot_y + self.station_pad,
