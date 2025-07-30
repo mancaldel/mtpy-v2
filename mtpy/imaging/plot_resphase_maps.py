@@ -27,6 +27,12 @@ from matplotlib import ticker
 from mtpy.core import Z
 from mtpy.imaging.mtplot_tools import PlotBaseMaps
 
+try:
+    import contextily as cx
+    has_cx = True
+except ModuleNotFoundError:
+    has_cx = False
+
 # =============================================================================
 
 
@@ -83,6 +89,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
         self.scale = 1
         self.res_cmap = "rainbow_r"
         self.phase_cmap = "rainbow"
+        self.phase_alpha = 1.0
         self.plot_period = 1
 
         self.plot_xx = False
@@ -98,6 +105,13 @@ class PlotResPhaseMaps(PlotBaseMaps):
 
         self.marker_color = "k"
         self.marker_size = 10
+        self.marker_linewidth = "w"
+        self.marker_edgecolor = 0.5
+
+        self.plot_cx = False
+        self.cx_source = None
+        self.cx_limits = None
+        self.cx_zoom = "auto"
 
         self.cmap_limits = {
             "res_xx": (-1, 2),
@@ -355,6 +369,36 @@ class PlotResPhaseMaps(PlotBaseMaps):
         # plot results
         subplot_numbers = self._get_n_subplots()
         for comp, ax in subplot_dict.items():
+
+            # Plot background image if specified
+            if self.image_file is not None:
+                im = plt.imread(self.image_file)
+                self.ax.imshow(
+                    im, origin="lower", extent=self.image_extent, aspect="auto"
+                )
+            # plot stations (just to obtain gax for base map)
+            gdf = self.mt_data.to_geo_df(model_locations=False)
+            gax = gdf.plot(
+                ax=ax,
+                marker=self.marker,
+                color=self.marker_color,
+                markersize=0,
+            )
+            # Plot base map if specified
+            if has_cx and self.plot_cx:
+                cx_kwargs = {
+                    "crs": gdf.crs.to_string(),
+                    "source": self.cx_source,
+                    "zoom": self.cx_zoom
+                }
+                if self.cx_limits is not None:
+                    ax.set_xlim(self.cx_limits[0], self.cx_limits[1])
+                    ax.set_ylim(self.cx_limits[2], self.cx_limits[3])
+                cx.add_basemap(
+                    gax,
+                    **cx_kwargs,
+                )
+
             cmap = self._get_cmap(comp)
 
             plot_array = data_array[np.nonzero(data_array[comp])]
@@ -368,6 +412,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
                     cmap=cmap,
                     vmin=self.cmap_limits[comp][0],
                     vmax=self.cmap_limits[comp][1],
+                    alpha=self.phase_alpha,
                 )
             elif self.interpolation_method in [
                 "fancy",
@@ -389,6 +434,7 @@ class PlotResPhaseMaps(PlotBaseMaps):
                     ),
                     extend="both",
                     cmap=cmap,
+                    alpha=self.phase_alpha,
                 )
             self._get_colorbar(ax, im, comp)
 
@@ -401,6 +447,8 @@ class PlotResPhaseMaps(PlotBaseMaps):
                         marker=self.marker,
                         s=self.marker_size,
                         c=self.marker_color,
+                        edgecolors=self.marker_edgecolor,
+                        linewidths=self.marker_linewidth,
                     )
             # Label plots
             ax.text(
