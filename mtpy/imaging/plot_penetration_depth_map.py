@@ -42,8 +42,8 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         self.depth_alpha = 1.0
         self.marker_color = "k"
         self.marker_size = 10
-        self.marker_linewidth = "w"
-        self.marker_edgecolor = 0.5
+        self.marker_edgecolor = "w"
+        self.marker_linewidth = 0.5
         self.subplot_title_dict = {
             "det": "Determinant",
             "xy": "TE Mode",
