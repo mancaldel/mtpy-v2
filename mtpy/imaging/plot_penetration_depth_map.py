@@ -61,6 +61,11 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
         self.cx_limits = None
         self.cx_zoom = "auto"
 
+        self.plot_stations_names = False
+        self.station_font_dict = {"fontsize": 5, "weight": "normal"}
+        self.station_pad = 0.001
+        self.station_id = (0, None)
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -333,6 +338,17 @@ class PlotPenetrationDepthMap(PlotBaseMaps):
                     edgecolors=self.marker_edgecolor,
                     linewidths=self.marker_linewidth,
                 )
+                # Plot station names
+                if self.plot_stations_names:
+                    for name, lat, lon, *_ in plot_depth_array:
+                        ax.text(
+                            lon,
+                            lat + self.station_pad,
+                            name[self.station_id[0] : self.station_id[1]],
+                            horizontalalignment="center",
+                            verticalalignment="baseline",
+                            fontdict=self.station_font_dict,
+                        )
 
             ax.set_xlabel("Longitude (deg)", fontdict=self.font_dict)
             ax.set_ylabel("Latitude (deg)", fontdict=self.font_dict)

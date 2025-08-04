@@ -102,6 +102,10 @@ class PlotResPhaseMaps(PlotBaseMaps):
         self.plot_phase = True
 
         self.plot_stations = True
+        self.plot_stations_names = False
+        self.station_font_dict = {"fontsize": 5, "weight": "normal"}
+        self.station_pad = 0.001
+        self.station_id = (0, None)
 
         self.marker_color = "k"
         self.marker_size = 10
@@ -440,16 +444,27 @@ class PlotResPhaseMaps(PlotBaseMaps):
 
             # show stations
             if self.plot_stations:
-                if self.plot_stations:
-                    ax.scatter(
-                        plot_array["longitude"],
-                        plot_array["latitude"],
-                        marker=self.marker,
-                        s=self.marker_size,
-                        c=self.marker_color,
-                        edgecolors=self.marker_edgecolor,
-                        linewidths=self.marker_linewidth,
-                    )
+                ax.scatter(
+                    plot_array["longitude"],
+                    plot_array["latitude"],
+                    marker=self.marker,
+                    s=self.marker_size,
+                    c=self.marker_color,
+                    edgecolors=self.marker_edgecolor,
+                    linewidths=self.marker_linewidth,
+                )
+                # Plot station names
+                if self.plot_stations_names:
+                    for name, lat, lon, *_ in plot_array:
+                        ax.text(
+                            lon,
+                            lat + self.station_pad,
+                            name[self.station_id[0] : self.station_id[1]],
+                            horizontalalignment="center",
+                            verticalalignment="baseline",
+                            fontdict=self.station_font_dict,
+                        )
+
             # Label plots
             ax.text(
                 0.01,
